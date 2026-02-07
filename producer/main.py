@@ -38,10 +38,13 @@ def main():
         if events:
             count = 0
             for event in events:
-                if event.get("type") == "PushEvent":
+                try:
                     r.lpush(settings.QUEUE_KEY, json.dumps(event))
                     count += 1
-            print(f"✅ Pushed {count} events.", flush=True)
+                except Exception as e:
+                    print(f"Skipping bad event: {e}")
+
+            print(f"✅ Pushed {count} events (All Types).", flush=True)
         
         print("Sleeping for 60s...", flush=True)
         time.sleep(60)

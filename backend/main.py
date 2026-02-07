@@ -1,20 +1,22 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select, desc
+import redis.asyncio as redis 
+import asyncio
 
-# Modular Imports
 from config import settings
 from database.db import init_db, get_session
 from models.model import GithubEvent
-from schemas import EventResponse  # <--- Using the new Schema
+from schemas import EventResponse
 
+# --- LIFECYCLE ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Startup: Initializing Database Tables...")
+    print("Startup: Initializing...")
     init_db()
     yield
-    print("Shutdown: Cleaning up...")
+    print("Shutdown: cleanup...")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,26 +24,57 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Setup
+# --- CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/", tags=["Health"])
-def health_check():
-    return {"status": "ok", "service": "backend"}
+# --- ASYNC REDIS CONNECTION ---
+redis_client = redis.from_url(f"redis://{settings.REDIS_HOST}:6379", decode_responses=True)
 
-# The 'response_model' parameter automatically filters data using your Schema
-@app.get("/events/", response_model=list[EventResponse], tags=["Events"])
+@app.get("/")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/events/", response_model=list[EventResponse])
 def read_events(
     session: Session = Depends(get_session), 
-    limit: int = 100
+    limit: int = 50, 
+    offset: int = 0  
 ):
-    """Fetch latest events"""
-    statement = select(GithubEvent).order_by(desc(GithubEvent.created_at)).limit(limit)
+    statement = select(GithubEvent).order_by(desc(GithubEvent.created_at)).offset(offset).limit(limit)
     events = session.exec(statement).all()
     return events
+
+# --- WEBSOCKET ENDPOINT ---
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    # Create a dedicated PubSub connection for this client
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe("events_stream")
+
+    try:
+        while True:
+            # Check for new messages (non-blocking)
+            message = await pubsub.get_message(ignore_subscribe_messages=True)
+            
+            if message and message["type"] == "message":
+                # Send data to frontend
+                await websocket.send_text(message["data"])
+            
+            # Tiny sleep to let other tasks run
+            await asyncio.sleep(0.01)
+            
+    except WebSocketDisconnect:
+        print("Client disconnected")
+    except Exception as e:
+        print(f"WebSocket Error: {e}")
+    finally:
+        await pubsub.close()
+        

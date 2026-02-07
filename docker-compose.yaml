@@ -77,5 +77,21 @@ services:
       redis:
         condition: service_started
 
+  # 6. Frontend (Nuxt + Bun)
+  frontend:
+    build: ./frontend
+    container_name: gitpulse_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.nuxt
+    environment:
+      - NUXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
