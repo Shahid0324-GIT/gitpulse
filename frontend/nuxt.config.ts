@@ -6,7 +6,7 @@ export default defineNuxtConfig({
     host: "0.0.0.0",
     port: 3000,
   },
-  modules: ["@nuxtjs/tailwindcss"],
+  modules: ["@nuxtjs/tailwindcss", "@nuxt/eslint"],
   nitro: {
     preset: "bun",
   },

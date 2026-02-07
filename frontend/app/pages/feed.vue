@@ -88,9 +88,9 @@ onMounted(() => {
     <div class="mt-8 text-center py-4">
       <button
         v-if="hasMore"
-        @click="loadMore"
         :disabled="isLoadingMore"
         class="px-8 py-3 rounded-full bg-slate-800 border border-slate-700 hover:bg-blue-600 hover:border-blue-500 hover:text-white text-slate-300 font-bold transition-all flex items-center gap-2 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+        @click="loadMore"
       >
         <span v-if="isLoadingMore" class="animate-spin text-xl">⏳</span>
         <span>{{ isLoadingMore ? "Loading..." : "Load Older Events" }}</span>

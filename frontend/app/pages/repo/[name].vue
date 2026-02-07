@@ -25,8 +25,8 @@ const stats = computed(() => {
 <template>
   <div class="p-8">
     <button
-      @click="router.back()"
       class="mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+      @click="router.back()"
     >
       ← Back to Dashboard
     </button>
