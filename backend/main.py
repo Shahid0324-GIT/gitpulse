@@ -55,20 +55,16 @@ def read_events(
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     
-    # Create a dedicated PubSub connection for this client
     pubsub = redis_client.pubsub()
     await pubsub.subscribe("events_stream")
 
     try:
         while True:
-            # Check for new messages (non-blocking)
             message = await pubsub.get_message(ignore_subscribe_messages=True)
             
             if message and message["type"] == "message":
-                # Send data to frontend
                 await websocket.send_text(message["data"])
             
-            # Tiny sleep to let other tasks run
             await asyncio.sleep(0.01)
             
     except WebSocketDisconnect:

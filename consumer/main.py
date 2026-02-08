@@ -47,16 +47,13 @@ def process_event(event_json):
 def cleanup_old_data():
     """Deletes events older than 24 hours to save DB space."""
     try:
-        # Keep timezone-aware datetime since DB column has timezone=True
         cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
         
         with Session(engine) as session:
-            # Compare with timezone-aware datetime
             statement = delete(GithubEvent).where(GithubEvent.created_at < cutoff_time) # type: ignore
             result = session.exec(statement)
             session.commit()
             
-            # Only print if we actually deleted something
             if result.rowcount > 0:
                 print(f"🧹 Cleanup: Deleted {result.rowcount} old events.", flush=True)
                 
