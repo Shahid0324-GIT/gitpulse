@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  type ScriptableContext,
 } from "chart.js";
 
 ChartJS.register(
@@ -28,13 +29,26 @@ useHead({ title: "Dashboard" });
 const { eventCount, isConnected, connect, countdown } = useEventStream();
 const config = useRuntimeConfig();
 
-const hourlyData = ref({});
-const loadingHeatmap = ref(true);
+type HourlyData = Record<number, number>;
 
+// --- STATE ---
+const hourlyData = ref<HourlyData>({});
+const loadingHeatmap = ref(true);
 const showFloating = ref(false);
 const floatingDiff = ref(0);
+
 let previousCount = 0;
-let debounceTimer = null;
+let debounceTimer: NodeJS.Timeout | null = null;
+
+const soundEnabled = ref(true);
+let audio: HTMLAudioElement | null = null;
+
+const toggleSound = () => {
+  soundEnabled.value = !soundEnabled.value;
+  if (soundEnabled.value && audio) {
+    audio.play().catch((e) => console.log("Audio block:", e));
+  }
+};
 
 watch(eventCount, (newVal) => {
   if (previousCount === 0) {
@@ -43,6 +57,11 @@ watch(eventCount, (newVal) => {
   }
 
   const diff = newVal - previousCount;
+
+  if (soundEnabled.value && audio) {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }
 
   const currentHour = new Date().getUTCHours();
 
@@ -59,8 +78,8 @@ watch(eventCount, (newVal) => {
   }
 
   previousCount = newVal;
-
   showFloating.value = true;
+
   if (debounceTimer) clearTimeout(debounceTimer);
 
   debounceTimer = setTimeout(() => {
@@ -72,7 +91,11 @@ watch(eventCount, (newVal) => {
 });
 
 onMounted(async () => {
+  audio = new Audio("/ping.wav");
+  audio.volume = 0.3;
+
   connect();
+
   previousCount = eventCount.value;
 
   try {
@@ -85,7 +108,6 @@ onMounted(async () => {
   }
 });
 
-// --- CHART CONFIG ---
 const chartData = computed(() => {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   return {
@@ -95,7 +117,7 @@ const chartData = computed(() => {
         label: "Events",
         data: hours.map((h) => hourlyData.value[h] || 0),
         borderColor: "#2ea043",
-        backgroundColor: (context) => {
+        backgroundColor: (context: ScriptableContext<"line">) => {
           const ctx = context.chart.ctx;
           const gradient = ctx.createLinearGradient(0, 0, 0, 400);
           gradient.addColorStop(0, "rgba(46, 160, 67, 0.5)");
@@ -128,7 +150,7 @@ const chartOptions = {
     },
   },
   interaction: {
-    mode: "index",
+    mode: "index" as const,
     intersect: false,
   },
 };
@@ -150,6 +172,13 @@ const chartOptions = {
       <p class="text-slate-400 text-lg font-light tracking-wide">
         Global Open Source Intelligence
       </p>
+      <button
+        class="mt-4 px-4 py-2 rounded-full border border-slate-700 bg-slate-800/50 text-slate-400 text-xs font-mono hover:bg-slate-700 hover:text-white transition-colors flex items-center gap-2"
+        @click="toggleSound"
+      >
+        <span v-if="soundEnabled">🔊 SOUND: ON</span>
+        <span v-else>🔇 SOUND: OFF</span>
+      </button>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

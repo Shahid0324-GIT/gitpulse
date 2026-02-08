@@ -1,5 +1,4 @@
 <script setup>
-// No watchers, no intervals. Just read the state.
 const { countdown } = useEventStream();
 </script>
 
