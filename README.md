@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Vue](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vue.js)
 ![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00C58E?logo=nuxt.js)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)
+![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 
 > **"The Heartbeat of Open Source"**
@@ -86,8 +86,8 @@ gitpulse/
 
 ## Tech Stack
 
-- **Frontend:** Nuxt 3, Vue.js, TailwindCSS, Chart.js
-- **Backend:** Python 3.11, FastAPI, Uvicorn
+- **Frontend:** Nuxt 4, Vue.js, TailwindCSS, Chart.js
+- **Backend:** Python 3.14, FastAPI, Uvicorn
 - **Database:** PostgreSQL (History), Redis (Queue & Pub/Sub)
 - **Runtime:** Bun (Frontend), Python (Backend)
 - **DevOps:** Docker, Docker Compose
