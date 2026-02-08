@@ -52,39 +52,68 @@ onMounted(() => {
       <div
         v-for="event in events"
         :key="event.id"
-        class="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-blue-500/30 transition-all flex items-center gap-4 group"
+        class="p-4 rounded-xl bg-gradient-to-r from-[#161b22] to-[#0d1117] border border-[#30363d] hover:border-green-500/30 transition-all duration-300 flex items-center gap-4 group relative overflow-hidden shadow-lg hover:shadow-green-900/10 hover:-translate-y-0.5"
+        :class="{
+          'border-red-900/30 from-red-900/10 to-[#0d1117]': event.is_bot,
+        }"
       >
-        <div
-          class="w-10 h-10 rounded-full bg-slate-800 group-hover:bg-blue-900/30 flex items-center justify-center transition-colors shrink-0"
-        >
-          <span v-if="event.event_type === 'PushEvent'">🚀</span>
-          <span v-else-if="event.event_type === 'WatchEvent'">⭐</span>
-          <span v-else-if="event.event_type === 'CreateEvent'">✨</span>
-          <span v-else-if="event.event_type === 'IssuesEvent'">🐛</span>
-          <span v-else-if="event.event_type === 'PullRequestEvent'">🔀</span>
-          <span v-else>📦</span>
+        <div class="relative shrink-0">
+          <img
+            :src="
+              event.is_bot
+                ? 'https://github.githubassets.com/images/mona-whisper.gif'
+                : `https://github.com/${event.actor_name}.png`
+            "
+            class="w-12 h-12 rounded-full border border-slate-700 bg-slate-800"
+            loading="lazy"
+            alt="User Avatar"
+          />
+
+          <div
+            class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-slate-800 border border-slate-900 flex items-center justify-center text-xs shadow-sm"
+          >
+            <span v-if="event.event_type === 'PushEvent'">🚀</span>
+            <span v-else-if="event.event_type === 'WatchEvent'">⭐</span>
+            <span v-else-if="event.event_type === 'CreateEvent'">✨</span>
+            <span v-else-if="event.event_type === 'IssuesEvent'">🐛</span>
+            <span v-else-if="event.event_type === 'PullRequestEvent'">🔀</span>
+            <span v-else>📦</span>
+          </div>
         </div>
 
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 z-10">
           <NuxtLink
             :to="`/repo/${encodeURIComponent(event.repo_name)}`"
-            class="text-blue-400 font-bold group-hover:text-blue-300 hover:underline block truncate"
+            class="text-blue-400 font-bold group-hover:text-blue-300 hover:underline block truncate text-lg"
           >
             {{ event.repo_name }}
           </NuxtLink>
-          <p class="text-xs text-slate-500 truncate">
-            <span class="text-slate-300">{{ event.actor_name }}</span> •
-            {{ new Date(event.created_at).toLocaleTimeString() }}
-          </p>
+
+          <div class="flex items-center gap-2 text-xs text-slate-500 truncate">
+            <span class="text-slate-300 font-medium">{{
+              event.actor_name
+            }}</span>
+
+            <span
+              v-if="event.is_bot"
+              class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider"
+            >
+              BOT
+            </span>
+
+            <span>•</span>
+            <span>{{ new Date(event.created_at).toLocaleTimeString() }}</span>
+          </div>
         </div>
 
         <span
-          class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 shrink-0 hidden sm:inline-block"
+          class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400 shrink-0 hidden sm:inline-block border border-slate-700"
         >
           {{ event.event_type }}
         </span>
       </div>
     </TransitionGroup>
+
     <div class="mt-8 text-center py-4">
       <button
         v-if="hasMore"

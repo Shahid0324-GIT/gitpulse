@@ -21,14 +21,25 @@ def process_event(event_json):
         data = json.loads(event_json)
         created_at = datetime.strptime(data["created_at"], "%Y-%m-%dT%H:%M:%SZ")
         created_at = created_at.replace(tzinfo=timezone.utc) 
+        actor_name = data["actor"]["login"]
         
+        language = None
+        if "payload" in data and "pull_request" in data["payload"]:
+            repo_info = data["payload"]["pull_request"]["base"]["repo"]
+            language = repo_info.get("language")
+        
+        elif "payload" in data and "forkee" in data["payload"]:
+             language = data["payload"]["forkee"].get("language")
+             
         # 1. Clean the Data
         new_event = GithubEvent(
             id=data["id"],
             repo_name=data["repo"]["name"],
             event_type=data["type"],
             actor_name=data["actor"]["login"],
-            created_at=created_at
+            created_at=created_at,
+            language=language,
+            is_bot = actor_name.endswith("[bot]") or "github-actions" in actor_name
         )
         
         # 2. Save to DB & Publish
