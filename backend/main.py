@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select, desc
+from sqlmodel import Session, select, desc, text, func
 import redis.asyncio as redis 
 import asyncio
 
@@ -74,3 +74,33 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         await pubsub.close()
         
+@app.get("/stats/hourly")
+def get_hourly_stats(session: Session = Depends(get_session)):
+    """
+    Returns the count of events for each hour of the day (0-23).
+    Useful for a 'Daily Rhythm' chart.
+    """
+    query = text("""
+        SELECT EXTRACT(HOUR FROM created_at) as hour, COUNT(*) as count 
+        FROM githubevent 
+        GROUP BY hour 
+        ORDER BY hour ASC
+    """)
+    
+    results = session.exec(query).all() # type: ignore
+    
+    hourly_data = {h: 0 for h in range(24)}
+    
+    for row in results:
+        hour = int(row[0])
+        count = row[1]
+        hourly_data[hour] = count
+        
+    return hourly_data
+
+@app.get("/stats/total")
+def get_total_count(session: Session = Depends(get_session)):
+    """Returns the total number of events stored in the DB."""
+    # Fast SQL count query
+    count = session.exec(select(func.count()).select_from(GithubEvent)).one()
+    return {"count": count}

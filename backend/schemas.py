@@ -7,4 +7,6 @@ class EventResponse(BaseModel):
     event_type: str
     actor_name: str
     created_at: datetime
+    language: str | None
+    is_bot: bool 
     model_config = ConfigDict(from_attributes=True)
